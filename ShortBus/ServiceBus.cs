@@ -39,11 +39,15 @@ namespace ShortBus {
 		public string InputQueuePath { get { return _inputQueuePath; } }
 
 		public void Publish(IList<IEvent> evts) {
-			throw new NotImplementedException();
+			for (short i = 0; i < evts.Count; i++) {
+				Publish(evts[i]);
+			}
 		}
 
 		public void Publish(IEvent evt) {
-			throw new NotImplementedException();
+			for (short i = 0; i < _outputQueuePaths.Length; i++) {
+				SendToMsmq(_outputQueuePaths[i], SerializeToXml(evt));
+			}
 		}
 
 		public void Send(IList<ICommand> commands) {
@@ -100,6 +104,13 @@ namespace ShortBus {
 			serializer.Serialize(sw, msg);
 
 			return sw.ToString();
+		}
+
+		internal void SendToMsmq(string queue, string bodyString) {
+			MessageQueue msmq = new MessageQueue(queue);
+			Message msg = new Message();
+			msg.Body = bodyString;
+			msmq.Send(msg);
 		}
 	}
 

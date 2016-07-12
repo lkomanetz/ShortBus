@@ -42,7 +42,9 @@
   <ItemGroup>
     <Compile Include="ICommand.cs" />
     <Compile Include="IEvent.cs" />
-    <Compile Include="IEventHandler.cs" />
+    <Compile Include="MessageHandlers\ICommandHandler.cs" />
+    <Compile Include="MessageHandlers\IEventHandler.cs" />
+    <Compile Include="MessageHandlers\IMessageHandler.cs" />
     <Compile Include="IMessage.cs" />
     <Compile Include="IServiceBus.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
