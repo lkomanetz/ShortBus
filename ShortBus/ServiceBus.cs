@@ -70,6 +70,15 @@ namespace ShortBus {
 				MessageQueue.Create(inputQueue);
 				_inputQueue = new MessageQueue(inputQueue);
 			}
+
+			_inputQueue.BeginReceive();
+			_inputQueue.ReceiveCompleted += _inputQueue_ReceiveCompleted;
+		}
+
+		private void _inputQueue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e) {
+			//_inputQueue.EndReceive();
+			_inputQueue.BeginReceive();
+			throw new NotImplementedException();
 		}
 
 		internal Type[] FindMessageInstances() {
@@ -85,12 +94,6 @@ namespace ShortBus {
 			}
 
 			return handlerTypes.ToArray<Type>();
-		}
-
-		private void ReadQueueAsync() {
-			Thread readThread = new Thread(() => {
-			});
-			readThread.Start();
 		}
 
 		private void SendToOutputQueues(IMessage package) {

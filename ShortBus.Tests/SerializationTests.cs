@@ -50,13 +50,11 @@ namespace ShortBus.Tests {
 		}
 
 		[TestMethod]
-		public void HandlersExecutionSucceeds() {
+		public void EventHandlerExecutionSucceeds() {
 			TestEvent evt = CreateEvent();
 			TestCommand cmd = CreateCommand();
 
 			_bus.Publish(evt);
-			_bus.Send(cmd);
-
 		}
 
 		private TestEvent CreateEvent() {
