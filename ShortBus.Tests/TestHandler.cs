@@ -16,12 +16,15 @@ namespace ShortBus.Tests {
 		public TestHandler() {
 		}
 
+		// TODO(Logan):  Please god fix this.  I shouldn't have to implement this method.
+		public void Handle(IMessage msg) { }
+
 		public void Handle(TestEvent evt) {
 			if (evt.Id != Guid.Parse(TestConstants.TestId)) {
 				throw new Exception("Id is not what was published.");
 			}
 		}
-		public void Execute(TestCommand cmd) {
+		public void Handle(TestCommand cmd) {
 			if (cmd.Id != Guid.Parse(TestConstants.TestId)) {
 				throw new Exception("Id is not what was sent.");
 			}

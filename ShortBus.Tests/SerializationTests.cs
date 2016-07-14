@@ -33,10 +33,7 @@ namespace ShortBus.Tests {
 		public void SerializationOfObjectSucceeds() {
 
 			TestEvent msg = CreateEvent();
-			TestCommand cmd = new TestCommand() {
-				Id = Guid.Parse(testGuid)
-			};
-
+			TestCommand cmd = CreateCommand();
 			ServiceBus bus = new ServiceBus(null, null, null);
 			string serializedEvent = bus.SerializeToXml(msg);
 			string serializedCommand = bus.SerializeToXml(cmd);

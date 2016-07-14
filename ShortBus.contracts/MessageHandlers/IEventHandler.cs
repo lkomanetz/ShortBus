@@ -1,4 +1,5 @@
-﻿using ShortBus.Contracts;
+﻿using ShortBus.contracts.MessageHandlers;
+using ShortBus.Contracts;
 using ShortBus.Contracts.MessageHandlers;
 using System;
 using System.Collections.Generic;
@@ -7,8 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ShortBus.Contracts.MessageHandlers {
-	public interface IEventHandler<T> :
-		IMessageHandler<T> where T : IEvent {
-		void Handle(T msg);
+
+	public interface IEventHandler<T> : IMessageHandler where T : IEvent {
 	}
+
 }

@@ -44,9 +44,9 @@
     <Compile Include="IEvent.cs" />
     <Compile Include="MessageHandlers\ICommandHandler.cs" />
     <Compile Include="MessageHandlers\IEventHandler.cs" />
-    <Compile Include="MessageHandlers\IMessageHandler.cs" />
     <Compile Include="IMessage.cs" />
     <Compile Include="IServiceBus.cs" />
+    <Compile Include="MessageHandlers\IMessageHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

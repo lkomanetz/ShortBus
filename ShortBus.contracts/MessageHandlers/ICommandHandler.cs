@@ -1,4 +1,5 @@
-﻿using ShortBus.Contracts;
+﻿using ShortBus.contracts.MessageHandlers;
+using ShortBus.Contracts;
 using ShortBus.Contracts.MessageHandlers;
 using System;
 using System.Collections.Generic;
@@ -7,9 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ShortBus.Contracts.MessageHandlers {
-	public interface ICommandHandler<T> :
-		IMessageHandler<T> where T : ICommand {
 
-		void Execute(T cmd);
+	public interface ICommandHandler<T> : IMessageHandler where T : ICommand {
 	}
+
 }

@@ -9,14 +9,18 @@ using System.Reflection;
 using System.Threading;
 using System.Xml.Serialization;
 using System.IO;
+using ShortBus.Contracts.MessageHandlers;
+using ShortBus.contracts.MessageHandlers;
 
 namespace ShortBus {
 
 	public class ServiceBus : IServiceBus {
 		private Type[] _handlerTypes;
+		private Type[] _serializedTypes;
 		private string[] _outputQueuePaths;
 		private string _inputQueuePath;
 		private MessageQueue _inputQueue;
+		private const string MESSAGE_HANDLER_CLASS_NAME = "IMessageHandler";
 
 		public ServiceBus(
 			Type[] handlerTypes,
@@ -28,7 +32,8 @@ namespace ShortBus {
 			_inputQueuePath = inputQueuePath;
 			_inputQueue = null;
 
-			this.InitializeInputQueue(inputQueuePath);
+			_serializedTypes = this.FindSerializedTypes(_handlerTypes.ToArray());
+			this.InitializeInputQueue(inputQueuePath, _serializedTypes);
 		}
 
 		public string[] OutputQueuePaths {
@@ -46,7 +51,7 @@ namespace ShortBus {
 
 		public void Publish(IEvent evt) {
 			for (short i = 0; i < _outputQueuePaths.Length; i++) {
-				SendToMsmq(_outputQueuePaths[i], SerializeToXml(evt));
+				SendToMsmq(_outputQueuePaths[i], evt);
 			}
 		}
 
@@ -58,7 +63,7 @@ namespace ShortBus {
 			throw new NotImplementedException();
 		}
 
-		public void InitializeInputQueue(string inputQueue) {
+		public void InitializeInputQueue(string inputQueue, IList<Type> serializedTypes) {
 			if (String.IsNullOrEmpty(inputQueue)) {
 				return;
 			}
@@ -71,14 +76,17 @@ namespace ShortBus {
 				_inputQueue = new MessageQueue(inputQueue);
 			}
 
+			_inputQueue.Formatter = new XmlMessageFormatter(serializedTypes.ToArray());
 			_inputQueue.BeginReceive();
 			_inputQueue.ReceiveCompleted += _inputQueue_ReceiveCompleted;
 		}
 
 		private void _inputQueue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e) {
-			//_inputQueue.EndReceive();
+			Message msg = _inputQueue.EndReceive(e.AsyncResult);
+			msg.Formatter = new XmlMessageFormatter(_serializedTypes);
+			IMessage test = msg.Body as IMessage;
+			ExecuteHandlers(test);
 			_inputQueue.BeginReceive();
-			throw new NotImplementedException();
 		}
 
 		internal Type[] FindMessageInstances() {
@@ -96,9 +104,40 @@ namespace ShortBus {
 			return handlerTypes.ToArray<Type>();
 		}
 
+		private void ExecuteHandlers(IMessage msg) {
+			Type passedInType = msg.GetType();
+			Type type = _handlerTypes
+				.Where(x => {
+					return x.GetInterfaces().Any(y => y.Name.Contains(MESSAGE_HANDLER_CLASS_NAME)); 
+				})
+				.FirstOrDefault();
+
+			if (type == null) {
+				return;
+			}
+			IMessageHandler handler = (IMessageHandler)Activator.CreateInstance(type);
+			handler.Handle(msg);
+		}
+
 		private void SendToOutputQueues(IMessage package) {
 			Message msg = new Message();
 			msg.Body = SerializeToXml(package);
+		}
+
+		//TODO(Logan):  This is where i left off.  I'm getting an error when interfaces[j].GetGenericArguments() is called.
+		private Type[] FindSerializedTypes(Type[] handlerTypes) {
+			List<Type> serializedTypes = new List<Type>();
+
+			for (short i = 0; i < handlerTypes.Length; i++) {
+				Type type = handlerTypes[i];
+				Type[] interfaces = type.GetInterfaces();
+
+				for (short j = 0; j < interfaces.Length; j++) {
+					serializedTypes.Add(interfaces[j].GetGenericArguments()[0]);
+				}
+			}
+
+			return serializedTypes.ToArray<Type>();
 		}
 
 		internal string SerializeToXml(IMessage msg) {
@@ -109,11 +148,11 @@ namespace ShortBus {
 			return sw.ToString();
 		}
 
-		internal void SendToMsmq(string queue, string bodyString) {
+		internal void SendToMsmq(string queue, IMessage msg) {
 			MessageQueue msmq = new MessageQueue(queue);
-			Message msg = new Message();
-			msg.Body = bodyString;
-			msmq.Send(msg);
+			Message msmqMsg = new Message();
+			msmqMsg.Body = msg;
+			msmq.Send(msmqMsg);
 		}
 	}
 
