@@ -10,14 +10,8 @@ using ShortBus.Tests.TestCommands;
 
 namespace ShortBus.Tests {
 	public class TestHandler :
-		IEventHandler<TestEvent>,
-		ICommandHandler<TestCommand> {
-
-		public TestHandler() {
-		}
-
-		// TODO(Logan):  Please god fix this.  I shouldn't have to implement this method.
-		public void Handle(IMessage msg) { }
+		IMessageHandler<TestEvent>, 
+		IMessageHandler<TestCommand> {
 
 		public void Handle(TestEvent evt) {
 			if (evt.Id != Guid.Parse(TestConstants.TestId)) {

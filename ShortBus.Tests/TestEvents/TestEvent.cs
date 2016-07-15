@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ShortBus.Tests.TestEvents {
 
-	public class TestEvent : IEvent {
+	public class TestEvent : IMessage {
 		public Guid Id { get; set; }
 		public int IntegerProperty { get; set; }
 		public string StringProperty { get; set; }

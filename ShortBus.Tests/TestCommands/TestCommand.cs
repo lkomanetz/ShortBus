@@ -6,7 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ShortBus.Tests.TestCommands {
-	public class TestCommand : ICommand {
+
+	public class TestCommand : IMessage {
 
 		public Guid Id { get; set; }
 

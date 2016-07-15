@@ -5,12 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ShortBus.contracts.MessageHandlers {
+namespace ShortBus.Contracts.MessageHandlers {
 
-	public interface IMessageHandler {
+	public interface IMessageHandler<T> where T : IMessage {
 
-		void Handle(IMessage msg);
-
+		void Handle(T msg);
 	}
 
 }

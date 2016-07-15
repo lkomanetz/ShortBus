@@ -10,11 +10,11 @@ using System.Threading;
 using System.Xml.Serialization;
 using System.IO;
 using ShortBus.Contracts.MessageHandlers;
-using ShortBus.contracts.MessageHandlers;
 
 namespace ShortBus {
 
 	public class ServiceBus : IServiceBus {
+
 		private Type[] _handlerTypes;
 		private Type[] _serializedTypes;
 		private string[] _outputQueuePaths;
@@ -43,25 +43,25 @@ namespace ShortBus {
 
 		public string InputQueuePath { get { return _inputQueuePath; } }
 
-		public void Publish(IList<IEvent> evts) {
+		public void Publish(IList<IMessage> evts) {
 			for (short i = 0; i < evts.Count; i++) {
 				Publish(evts[i]);
 			}
 		}
 
-		public void Publish(IEvent evt) {
+		public void Publish(IMessage evt) {
 			for (short i = 0; i < _outputQueuePaths.Length; i++) {
 				SendToMsmq(_outputQueuePaths[i], evt);
 			}
 		}
 
-		public void Send(IList<ICommand> commands) {
-			throw new NotImplementedException();
-		}
+		//public void Send(IList<ICommand> commands) {
+		//	throw new NotImplementedException();
+		//}
 
-		public void Send(ICommand command) {
-			throw new NotImplementedException();
-		}
+		//public void Send(ICommand command) {
+		//	throw new NotImplementedException();
+		//}
 
 		public void InitializeInputQueue(string inputQueue, IList<Type> serializedTypes) {
 			if (String.IsNullOrEmpty(inputQueue)) {
@@ -106,16 +106,16 @@ namespace ShortBus {
 
 		private void ExecuteHandlers(IMessage msg) {
 			Type passedInType = msg.GetType();
-			Type type = _handlerTypes
+			Type handlerType = _handlerTypes
 				.Where(x => {
-					return x.GetInterfaces().Any(y => y.Name.Contains(MESSAGE_HANDLER_CLASS_NAME)); 
-				})
+					return x.GetInterfaces().Any(y => y.Name.Contains(MESSAGE_HANDLER_CLASS_NAME)); })
 				.FirstOrDefault();
 
-			if (type == null) {
+			if (handlerType == null) {
 				return;
 			}
-			IMessageHandler handler = (IMessageHandler)Activator.CreateInstance(type);
+
+			IMessageHandler<IMessage> handler = (IMessageHandler<IMessage>)Activator.CreateInstance(handlerType);
 			handler.Handle(msg);
 		}
 
@@ -124,7 +124,6 @@ namespace ShortBus {
 			msg.Body = SerializeToXml(package);
 		}
 
-		//TODO(Logan):  This is where i left off.  I'm getting an error when interfaces[j].GetGenericArguments() is called.
 		private Type[] FindSerializedTypes(Type[] handlerTypes) {
 			List<Type> serializedTypes = new List<Type>();
 
@@ -133,7 +132,11 @@ namespace ShortBus {
 				Type[] interfaces = type.GetInterfaces();
 
 				for (short j = 0; j < interfaces.Length; j++) {
-					serializedTypes.Add(interfaces[j].GetGenericArguments()[0]);
+					Type[] genericArguments = interfaces[j].GetGenericArguments();
+
+					if (genericArguments.Length == 1) {
+						serializedTypes.Add(interfaces[j].GetGenericArguments()[0]);
+					}
 				}
 			}
 
