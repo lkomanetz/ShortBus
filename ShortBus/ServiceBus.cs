@@ -105,7 +105,6 @@ namespace ShortBus {
 		}
 
 		private void ExecuteHandlers(IMessage msg) {
-			Type passedInType = msg.GetType();
 			Type handlerType = _handlerTypes
 				.Where(x => {
 					return x.GetInterfaces().Any(y => y.Name.Contains(MESSAGE_HANDLER_CLASS_NAME)); })
@@ -115,8 +114,15 @@ namespace ShortBus {
 				return;
 			}
 
-			IMessageHandler<IMessage> handler = (IMessageHandler<IMessage>)Activator.CreateInstance(handlerType);
-			handler.Handle(msg);
+			object handler = Activator.CreateInstance(handlerType);
+			var handlerInterfaceType = typeof(IMessageHandler<>).MakeGenericType(msg.GetType());
+			handlerInterfaceType.InvokeMember(
+				"Handle",
+				BindingFlags.InvokeMethod,
+				null,
+				handler,
+				new object[] { msg }
+			);
 		}
 
 		private void SendToOutputQueues(IMessage package) {
