@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ShortBus.Tests.TestCommands {
 
-	public class TestCommand : IMessage {
+	public class TestCommand : ICommand {
 
 		public Guid Id { get; set; }
 

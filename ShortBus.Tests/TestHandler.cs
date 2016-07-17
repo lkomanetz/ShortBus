@@ -10,15 +10,15 @@ using ShortBus.Tests.TestCommands;
 
 namespace ShortBus.Tests {
 	public class TestHandler :
-		IMessageHandler<TestEvent>, 
-		IMessageHandler<TestCommand> {
+		IEventHandler<TestEvent>, 
+		ICommandHandler<TestCommand> {
 
 		public void Handle(TestEvent evt) {
 			if (evt.Id != Guid.Parse(TestConstants.TestId)) {
 				throw new Exception("Id is not what was published.");
 			}
 		}
-		public void Handle(TestCommand cmd) {
+		public void Execute(TestCommand cmd) {
 			if (cmd.Id != Guid.Parse(TestConstants.TestId)) {
 				throw new Exception("Id is not what was sent.");
 			}

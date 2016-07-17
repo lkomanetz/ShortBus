@@ -9,7 +9,6 @@ namespace ShortBus.Contracts.MessageHandlers {
 
 	public interface IMessageHandler<T> where T : IMessage {
 
-		void Handle(T msg);
 	}
 
 }

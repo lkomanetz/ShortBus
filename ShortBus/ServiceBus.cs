@@ -43,25 +43,25 @@ namespace ShortBus {
 
 		public string InputQueuePath { get { return _inputQueuePath; } }
 
-		public void Publish(IList<IMessage> evts) {
+		public void Publish(IList<IEvent> evts) {
 			for (short i = 0; i < evts.Count; i++) {
 				Publish(evts[i]);
 			}
 		}
 
-		public void Publish(IMessage evt) {
+		public void Publish(IEvent evt) {
 			for (short i = 0; i < _outputQueuePaths.Length; i++) {
 				SendToMsmq(_outputQueuePaths[i], evt);
 			}
 		}
 
-		//public void Send(IList<ICommand> commands) {
-		//	throw new NotImplementedException();
-		//}
+		public void Send(IList<ICommand> commands) {
+			throw new NotImplementedException();
+		}
 
-		//public void Send(ICommand command) {
-		//	throw new NotImplementedException();
-		//}
+		public void Send(ICommand command) {
+			throw new NotImplementedException();
+		}
 
 		public void InitializeInputQueue(string inputQueue, IList<Type> serializedTypes) {
 			if (String.IsNullOrEmpty(inputQueue)) {
@@ -110,19 +110,40 @@ namespace ShortBus {
 					return x.GetInterfaces().Any(y => y.Name.Contains(MESSAGE_HANDLER_CLASS_NAME)); })
 				.FirstOrDefault();
 
+			BusMessageType msgType = GetBusMessageType(msg);
 			if (handlerType == null) {
 				return;
 			}
 
 			object handler = Activator.CreateInstance(handlerType);
-			var handlerInterfaceType = typeof(IMessageHandler<>).MakeGenericType(msg.GetType());
+
+			Type handlerInterfaceType = null;
+			string methodName = String.Empty;
+			if (msgType == BusMessageType.Event) {
+				handlerInterfaceType = typeof(IEventHandler<>).MakeGenericType(msg.GetType());
+				methodName = "Handle";
+			}
+			else {
+				handlerInterfaceType = typeof(ICommandHandler<>).MakeGenericType(msg.GetType());
+				methodName = "Execute";
+			}
+
 			handlerInterfaceType.InvokeMember(
-				"Handle",
+				methodName,
 				BindingFlags.InvokeMethod,
 				null,
 				handler,
 				new object[] { msg }
 			);
+		}
+
+		private BusMessageType GetBusMessageType(IMessage msg) {
+			Type type = msg.GetType();
+			Type[] interfaces = type.GetInterfaces();
+
+			return (interfaces.Any(x => x.Name.Contains("Event"))) ?
+				BusMessageType.Event :
+				BusMessageType.Command;
 		}
 
 		private void SendToOutputQueues(IMessage package) {

@@ -10,10 +10,10 @@ namespace ShortBus.Contracts {
 
 		string[] OutputQueuePaths { get; }
 		string InputQueuePath { get; }
-		void Publish(IList<IMessage> evts);
-		void Publish(IMessage evt);
-		//void Send(IList<ICommand> commands);
-		//void Send(ICommand command);	
+		void Publish(IList<IEvent> evts);
+		void Publish(IEvent evt);
+		void Send(IList<ICommand> commands);
+		void Send(ICommand command);
 	}
 
 }

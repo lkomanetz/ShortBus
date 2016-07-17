@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace ShortBus.Contracts.MessageHandlers {
 
-	public interface ICommandHandler<T> where T : ICommand {
+	public interface ICommandHandler<T> : IMessageHandler<T> where T : ICommand {
 
-		void Handle(T cmd);
+		void Execute(T cmd);
 	}
 
 }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ShortBus.Contracts.MessageHandlers {
 
-	public interface IEventHandler<T> where T : IEvent {
+	public interface IEventHandler<T> : IMessageHandler<T> where T : IMessage{
 
 		void Handle(T evt);
 	}
