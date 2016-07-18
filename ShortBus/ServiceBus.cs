@@ -93,32 +93,17 @@ namespace ShortBus {
 			_inputQueue.BeginReceive();
 		}
 
-		internal Type[] FindMessageInstances() {
-			List<Type> handlerTypes = new List<Type>();
-
-			for (short i = 0; i < _handlerTypes.Length; i++) {
-				Type[] handlers = _handlerTypes[i].GetInterfaces()
-					.Where(ifc => ifc.IsGenericType)
-					.Select(ifc => ifc.GetGenericArguments()[0])
-					.ToArray<Type>();
-
-				handlerTypes.AddRange(handlers);
-			}
-
-			return handlerTypes.ToArray<Type>();
-		}
-
 		private void ExecuteHandlers(IMessage msg) {
 			Type handlerType = _handlerTypes
 				.Where(x => {
 					return x.GetInterfaces().Any(y => y.Name.Contains(MESSAGE_HANDLER_CLASS_NAME)); })
 				.FirstOrDefault();
 
-			BusMessageType msgType = GetBusMessageType(msg);
 			if (handlerType == null) {
 				return;
 			}
 
+			BusMessageType msgType = GetBusMessageType(msg);
 			object handler = Activator.CreateInstance(handlerType);
 
 			Type handlerInterfaceType = null;
@@ -148,11 +133,6 @@ namespace ShortBus {
 			return (interfaces.Any(x => x.Name.Contains("Event"))) ?
 				BusMessageType.Event :
 				BusMessageType.Command;
-		}
-
-		private void SendToOutputQueues(IMessage package) {
-			Message msg = new Message();
-			msg.Body = SerializeToXml(package);
 		}
 
 		private Type[] FindSerializedTypes(Type[] handlerTypes) {

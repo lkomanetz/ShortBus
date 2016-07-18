@@ -84,7 +84,12 @@ namespace ShortBus.Tests {
 
 		private TestCommand CreateCommand() {
 			return new TestCommand() {
-				Id = Guid.Parse(TestConstants.TestId)
+				Id = Guid.Parse(TestConstants.TestId),
+				StringListProperty = new List<string>() {
+					"Test 1",
+					"Test 2",
+					"Test 3"
+				}
 			};
 		}
 
