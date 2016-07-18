@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ShortBus.Contracts.MessageHandlers;
 using ShortBus.Tests.TestCommands;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ShortBus.Tests {
 	public class TestHandler :
@@ -14,14 +15,16 @@ namespace ShortBus.Tests {
 		ICommandHandler<TestCommand> {
 
 		public void Handle(TestEvent evt) {
-			if (evt.Id != Guid.Parse(TestConstants.TestId)) {
-				throw new Exception("Id is not what was published.");
-			}
+			Assert.IsTrue(
+				evt.Id == Guid.Parse(TestConstants.TestId),
+				"The event Id parameter was not sent through the Service Bus"
+			);
 		}
 		public void Execute(TestCommand cmd) {
-			if (cmd.Id != Guid.Parse(TestConstants.TestId)) {
-				throw new Exception("Id is not what was sent.");
-			}
+			Assert.IsTrue(
+				cmd.Id == Guid.Parse(TestConstants.TestId),
+				"The command Id parameter was not sent through the Service Bus"
+			);
 		}
 
 	}

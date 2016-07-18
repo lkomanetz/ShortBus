@@ -43,27 +43,31 @@ namespace ShortBus {
 
 		public string InputQueuePath { get { return _inputQueuePath; } }
 
-		public void Publish(IList<IEvent> evts) {
-			for (short i = 0; i < evts.Count; i++) {
-				Publish(evts[i]);
+		public void Publish(IList<IEvent> events) {
+			for (short i = 0; i < events.Count; i++) {
+				Publish(events[i]);
 			}
 		}
 
-		public void Publish(IEvent evt) {
+		public void Publish(IEvent @event) {
 			for (short i = 0; i < _outputQueuePaths.Length; i++) {
-				SendToMsmq(_outputQueuePaths[i], evt);
+				SendToMsmq(_outputQueuePaths[i], @event);
 			}
 		}
 
 		public void Send(IList<ICommand> commands) {
-			throw new NotImplementedException();
+			for (short i = 0; i < commands.Count; i++) {
+				Send(commands[i]);
+			}
 		}
 
 		public void Send(ICommand command) {
-			throw new NotImplementedException();
+			for (short i = 0; i < _outputQueuePaths.Length; i++) {
+				SendToMsmq(_outputQueuePaths[i], command);
+			}
 		}
 
-		public void InitializeInputQueue(string inputQueue, IList<Type> serializedTypes) {
+		private void InitializeInputQueue(string inputQueue, IList<Type> serializedTypes) {
 			if (String.IsNullOrEmpty(inputQueue)) {
 				return;
 			}
@@ -155,8 +159,9 @@ namespace ShortBus {
 			List<Type> serializedTypes = new List<Type>();
 
 			for (short i = 0; i < handlerTypes.Length; i++) {
-				Type type = handlerTypes[i];
-				Type[] interfaces = type.GetInterfaces();
+				Type[] interfaces = handlerTypes[i].GetInterfaces()
+					.Where(x => x.Name.Contains(MESSAGE_HANDLER_CLASS_NAME) == false)
+					.ToArray<Type>();
 
 				for (short j = 0; j < interfaces.Length; j++) {
 					Type[] genericArguments = interfaces[j].GetGenericArguments();
@@ -179,9 +184,11 @@ namespace ShortBus {
 		}
 
 		internal void SendToMsmq(string queue, IMessage msg) {
+			string messageName = msg.GetType().Name;
 			MessageQueue msmq = new MessageQueue(queue);
 			Message msmqMsg = new Message();
 			msmqMsg.Body = msg;
+			msmqMsg.Label = messageName;
 			msmq.Send(msmqMsg);
 		}
 	}

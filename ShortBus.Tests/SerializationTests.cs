@@ -13,8 +13,8 @@ namespace ShortBus.Tests {
 	[TestClass]
 	public class SerializationTests {
 		private const string MSMQ_QUEUE = @".\private$\unit_test";
-		private IServiceBus _bus;
 		private const string testGuid = "fd9da0bf-7d53-4fa0-87a3-e1ab96d26098";
+		private ServiceBus _bus;
 
 		[TestInitialize]
 		public void Initialize() {
@@ -34,12 +34,11 @@ namespace ShortBus.Tests {
 
 			TestEvent msg = CreateEvent();
 			TestCommand cmd = CreateCommand();
-			ServiceBus bus = new ServiceBus(null, null, null);
-			string serializedEvent = bus.SerializeToXml(msg);
-			string serializedCommand = bus.SerializeToXml(cmd);
+			string serializedEvent = _bus.SerializeToXml(msg);
+			string serializedCommand = _bus.SerializeToXml(cmd);
 
-			string expectedEvent = ConstructXml(msg);
-			string expectedCommand = ConstructXml(cmd);
+			string expectedEvent = ConstructSerializedMessage(msg);
+			string expectedCommand = ConstructSerializedMessage(cmd);
 
 			XmlComparer.XmlComparer comparer = new XmlComparer.XmlComparer();
 			Assert.IsTrue(comparer.AreEqual(expectedEvent, serializedEvent));
@@ -49,9 +48,30 @@ namespace ShortBus.Tests {
 		[TestMethod]
 		public void EventHandlerExecutionSucceeds() {
 			TestEvent evt = CreateEvent();
-			TestCommand cmd = CreateCommand();
-
 			_bus.Publish(evt);
+
+			int arraySize = 5;
+			TestEvent[] events = new TestEvent[arraySize];
+			for (short i = 0; i < arraySize; i++) {
+				events[i] = CreateEvent();
+			}
+
+			_bus.Publish(events);
+		}
+
+		[TestMethod]
+		public void CommandHandlerExecutionSucceeds() {
+			TestCommand cmd = CreateCommand();
+			_bus.Send(cmd);
+
+
+			int arraySize = 5;
+			TestCommand[] events = new TestCommand[arraySize];
+			for (short i = 0; i < arraySize; i++) {
+				events[i] = CreateCommand();
+			}
+
+			_bus.Send(events);
 		}
 
 		private TestEvent CreateEvent() {
@@ -68,7 +88,7 @@ namespace ShortBus.Tests {
 			};
 		}
 
-		private string ConstructXml(IMessage msg) {
+		private string ConstructSerializedMessage(IMessage msg) {
 			string xsdString = @"http://www.w3.org/2001/XMLSchema";
 			string xsiString = @"http://www.w3.org/2001/XMLSchema-instance";
 			string className = msg.GetType().Name;
