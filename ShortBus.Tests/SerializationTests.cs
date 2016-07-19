@@ -105,7 +105,7 @@ namespace ShortBus.Tests {
 				</{className}>
 			";
 
-			IList<Tuple<string, object>> propValuePairs = GetPropertiesAndValues(msg);
+			IList<Tuple<string, object, string>> propValuePairs = GetPropertiesAndValues(msg);
 			string propValuePairString = String.Empty;
 
 			for (short i = 0; i < propValuePairs.Count; i++) {
@@ -118,14 +118,21 @@ namespace ShortBus.Tests {
 			return xmlStr;
 		}
 
-		private IList<Tuple<string, object>> GetPropertiesAndValues(IMessage msg) {
+		private string BuildContainerPropertyValues(Tuple<string, object, bool, string> property) {
+			string returnVal = $"<{property.Item1}>values</{property.Item1}";
+			return String.Empty;
+
+		}
+
+		private IList<Tuple<string, object, string>> GetPropertiesAndValues(IMessage msg) {
 			PropertyInfo[] properties = msg.GetType().GetProperties();
-			IList<Tuple<string, object>> pairs = new List<Tuple<string, object>>();
+			IList<Tuple<string, object, string>> pairs = new List<Tuple<string, object, string>>();
 
 			for (short i = 0; i < properties.Length; i++) {
-				var valuePair = Tuple.Create<string, object>(
+				var valuePair = Tuple.Create<string, object, string>(
 					properties[i].Name,
-					properties[i].GetValue(msg)
+					properties[i].GetValue(msg),
+					properties[i].PropertyType.ToString().Replace("System.", "").ToLower()
 				);
 				pairs.Add(valuePair);
 			}
