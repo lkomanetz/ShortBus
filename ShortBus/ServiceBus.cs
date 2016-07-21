@@ -10,17 +10,18 @@ using System.Threading;
 using System.Xml.Serialization;
 using System.IO;
 using ShortBus.Contracts.MessageHandlers;
+using Newtonsoft.Json;
 
 namespace ShortBus {
 
 	public class ServiceBus : IServiceBus {
 
-		private Type[] _handlerTypes;
-		private Type[] _serializedTypes;
+		private Type[] _handlerTypes; // All of the message handlers that need to be called when a message comes in
+		private Type[] _messageTypes;
 		private string[] _outputQueuePaths;
 		private string _inputQueuePath;
 		private MessageQueue _inputQueue;
-		private const string MESSAGE_HANDLER_CLASS_NAME = "IMessageHandler";
+		private const string MESSAGE_HANDLER_INTERFACE_NAME = "IMessageHandler";
 
 		public ServiceBus(
 			Type[] handlerTypes,
@@ -32,8 +33,8 @@ namespace ShortBus {
 			_inputQueuePath = inputQueuePath;
 			_inputQueue = null;
 
-			_serializedTypes = this.FindSerializedTypes(_handlerTypes.ToArray());
-			this.InitializeInputQueue(inputQueuePath, _serializedTypes);
+			_messageTypes = this.FindSerializedTypes(_handlerTypes.ToArray());
+			this.InitializeInputQueue(inputQueuePath, _messageTypes);
 		}
 
 		public string[] OutputQueuePaths {
@@ -87,43 +88,57 @@ namespace ShortBus {
 
 		private void _inputQueue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e) {
 			Message msg = _inputQueue.EndReceive(e.AsyncResult);
-			msg.Formatter = new XmlMessageFormatter(_serializedTypes);
+			msg.Formatter = new XmlMessageFormatter(_messageTypes);
 			IMessage test = msg.Body as IMessage;
 			ExecuteHandlers(test);
 			_inputQueue.BeginReceive();
 		}
 
 		private void ExecuteHandlers(IMessage msg) {
-			Type handlerType = _handlerTypes
+			//TODO (Logan) - Look into how accurate this is.  It should only find appropriate handlers
+			Type[] handlerTypes = _handlerTypes
 				.Where(x => {
-					return x.GetInterfaces().Any(y => y.Name.Contains(MESSAGE_HANDLER_CLASS_NAME)); })
-				.FirstOrDefault();
+					return x.GetInterfaces().Any(y => y.Name.Contains(MESSAGE_HANDLER_INTERFACE_NAME));
+				})
+				.ToArray<Type>();
 
-			if (handlerType == null) {
+			if (handlerTypes == null || handlerTypes.Length == 0) {
 				return;
 			}
 
-			BusMessageType msgType = GetBusMessageType(msg);
-			object handler = Activator.CreateInstance(handlerType);
+			int threadCount = handlerTypes.Length;
+			Thread[] handlerThreads = new Thread[threadCount];
 
-			Type handlerInterfaceType = null;
-			string methodName = String.Empty;
-			if (msgType == BusMessageType.Event) {
-				handlerInterfaceType = typeof(IEventHandler<>).MakeGenericType(msg.GetType());
-				methodName = "Handle";
-			}
-			else {
-				handlerInterfaceType = typeof(ICommandHandler<>).MakeGenericType(msg.GetType());
-				methodName = "Execute";
-			}
+			for (short i = 0; i < threadCount; i++) {
+				handlerThreads[i] = new Thread((index) => {
+					int arrayIndex = Convert.ToInt32(index);
+					Type handlerType = handlerTypes[arrayIndex];
+					object handler = Activator.CreateInstance(handlerType);
 
-			handlerInterfaceType.InvokeMember(
-				methodName,
-				BindingFlags.InvokeMethod,
-				null,
-				handler,
-				new object[] { msg }
-			);
+					Type handlerInterfaceType = null;
+					string methodName = String.Empty;
+
+					BusMessageType msgType = GetBusMessageType(msg);
+					if (msgType == BusMessageType.Event) {
+						handlerInterfaceType = typeof(IEventHandler<>).MakeGenericType(msg.GetType());
+						methodName = "Handle";
+					}
+					else {
+						handlerInterfaceType = typeof(ICommandHandler<>).MakeGenericType(msg.GetType());
+						methodName = "Execute";
+					}
+
+					handlerInterfaceType.InvokeMember(
+						methodName,
+						BindingFlags.InvokeMethod,
+						null,
+						handler,
+						new object[] { msg }
+					);
+				});
+
+				handlerThreads[i].Start(i);
+			}
 		}
 
 		private BusMessageType GetBusMessageType(IMessage msg) {
@@ -140,7 +155,7 @@ namespace ShortBus {
 
 			for (short i = 0; i < handlerTypes.Length; i++) {
 				Type[] interfaces = handlerTypes[i].GetInterfaces()
-					.Where(x => x.Name.Contains(MESSAGE_HANDLER_CLASS_NAME) == false)
+					.Where(x => x.Name.Contains(MESSAGE_HANDLER_INTERFACE_NAME) == false)
 					.ToArray<Type>();
 
 				for (short j = 0; j < interfaces.Length; j++) {
@@ -155,15 +170,7 @@ namespace ShortBus {
 			return serializedTypes.ToArray<Type>();
 		}
 
-		internal string SerializeToXml(IMessage msg) {
-			StringWriter sw = new StringWriter();
-			XmlSerializer serializer = new XmlSerializer(msg.GetType());
-			serializer.Serialize(sw, msg);
-
-			return sw.ToString();
-		}
-
-		internal void SendToMsmq(string queue, IMessage msg) {
+		private void SendToMsmq(string queue, IMessage msg) {
 			string messageName = msg.GetType().Name;
 			Message msmqMsg = new Message();
 			msmqMsg.Body = msg;

@@ -18,8 +18,9 @@ namespace ShortBus.Tests {
 
 		[TestInitialize]
 		public void Initialize() {
-			Type[] handlers = new Type[1] {
-				typeof(TestHandler)
+			Type[] handlers = new Type[2] {
+				typeof(TestHandler),
+				typeof(SecondTestHandler)
 			};
 
 			_bus = new ServiceBus(
@@ -34,7 +35,7 @@ namespace ShortBus.Tests {
 			TestEvent evt = CreateEvent();
 			_bus.Publish(evt);
 
-			int arraySize = 5;
+			int arraySize = 1;
 			TestEvent[] events = new TestEvent[arraySize];
 			for (short i = 0; i < arraySize; i++) {
 				events[i] = CreateEvent();
