@@ -165,11 +165,10 @@ namespace ShortBus {
 
 		internal void SendToMsmq(string queue, IMessage msg) {
 			string messageName = msg.GetType().Name;
-			MessageQueue msmq = new MessageQueue(queue);
 			Message msmqMsg = new Message();
 			msmqMsg.Body = msg;
 			msmqMsg.Label = messageName;
-			msmq.Send(msmqMsg);
+			_inputQueue.Send(msmqMsg);
 		}
 	}
 

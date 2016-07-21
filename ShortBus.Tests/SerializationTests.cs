@@ -30,22 +30,6 @@ namespace ShortBus.Tests {
 		}
 
 		[TestMethod]
-		public void SerializationOfObjectSucceeds() {
-
-			TestEvent msg = CreateEvent();
-			TestCommand cmd = CreateCommand();
-			string serializedEvent = _bus.SerializeToXml(msg);
-			string serializedCommand = _bus.SerializeToXml(cmd);
-
-			string expectedEvent = ConstructSerializedMessage(msg);
-			string expectedCommand = ConstructSerializedMessage(cmd);
-
-			XmlComparer.XmlComparer comparer = new XmlComparer.XmlComparer();
-			Assert.IsTrue(comparer.AreEqual(expectedEvent, serializedEvent));
-			Assert.IsTrue(comparer.AreEqual(expectedCommand, serializedCommand));
-		}
-
-		[TestMethod]
 		public void EventHandlerExecutionSucceeds() {
 			TestEvent evt = CreateEvent();
 			_bus.Publish(evt);
@@ -91,53 +75,6 @@ namespace ShortBus.Tests {
 					"Test 3"
 				}
 			};
-		}
-
-		private string ConstructSerializedMessage(IMessage msg) {
-			string xsdString = @"http://www.w3.org/2001/XMLSchema";
-			string xsiString = @"http://www.w3.org/2001/XMLSchema-instance";
-			string className = msg.GetType().Name;
-
-			string xmlStr = $@"<?xml version='1.0' encoding='utf-16'?>
-				<{className} xmlns:xsi='{xsiString}'
-					xmlns:xsd='{xsdString}'>
-					propValuePairs
-				</{className}>
-			";
-
-			IList<Tuple<string, object, string>> propValuePairs = GetPropertiesAndValues(msg);
-			string propValuePairString = String.Empty;
-
-			for (short i = 0; i < propValuePairs.Count; i++) {
-				string propertyName = propValuePairs[i].Item1;
-				object value = propValuePairs[i].Item2;
-				propValuePairString += $"<{propertyName}>{value}</{propertyName}>\n";
-			}
-
-			xmlStr = xmlStr.Replace("propValuePairs", propValuePairString);
-			return xmlStr;
-		}
-
-		private string BuildContainerPropertyValues(Tuple<string, object, bool, string> property) {
-			string returnVal = $"<{property.Item1}>values</{property.Item1}";
-			return String.Empty;
-
-		}
-
-		private IList<Tuple<string, object, string>> GetPropertiesAndValues(IMessage msg) {
-			PropertyInfo[] properties = msg.GetType().GetProperties();
-			IList<Tuple<string, object, string>> pairs = new List<Tuple<string, object, string>>();
-
-			for (short i = 0; i < properties.Length; i++) {
-				var valuePair = Tuple.Create<string, object, string>(
-					properties[i].Name,
-					properties[i].GetValue(msg),
-					properties[i].PropertyType.ToString().Replace("System.", "").ToLower()
-				);
-				pairs.Add(valuePair);
-			}
-
-			return pairs;
 		}
 
 	}
