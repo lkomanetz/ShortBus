@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 using ShortBus.Contracts;
 using System.Reflection;
 using System.Threading;
-using System.Xml.Serialization;
 using System.IO;
 using ShortBus.Contracts.MessageHandlers;
-using Newtonsoft.Json;
 
 namespace ShortBus {
 
@@ -82,8 +80,8 @@ namespace ShortBus {
 			}
 
 			_inputQueue.Formatter = new XmlMessageFormatter(serializedTypes.ToArray());
-			_inputQueue.BeginReceive();
 			_inputQueue.ReceiveCompleted += _inputQueue_ReceiveCompleted;
+			_inputQueue.BeginReceive();
 		}
 
 		private void _inputQueue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e) {
@@ -95,13 +93,10 @@ namespace ShortBus {
 		}
 
 		private void ExecuteHandlers(IMessage msg) {
+			BusMessageType msgType = GetBusMessageType(msg);
 			//TODO (Logan) - Look into how accurate this is.  It should only find appropriate handlers
-			Type[] handlerTypes = _handlerTypes
-				.Where(x => {
-					return x.GetInterfaces().Any(y => y.Name.Contains(MESSAGE_HANDLER_INTERFACE_NAME));
-				})
-				.ToArray<Type>();
 
+			Type[] handlerTypes = FindHandlersFor(msgType);
 			if (handlerTypes == null || handlerTypes.Length == 0) {
 				return;
 			}
@@ -118,7 +113,6 @@ namespace ShortBus {
 					Type handlerInterfaceType = null;
 					string methodName = String.Empty;
 
-					BusMessageType msgType = GetBusMessageType(msg);
 					if (msgType == BusMessageType.Event) {
 						handlerInterfaceType = typeof(IEventHandler<>).MakeGenericType(msg.GetType());
 						methodName = "Handle";
@@ -139,6 +133,24 @@ namespace ShortBus {
 
 				handlerThreads[i].Start(i);
 			}
+		}
+
+		private Type[] FindHandlersFor(BusMessageType type) {
+			string searchString = String.Empty;
+			switch (type) {
+				case BusMessageType.Event:
+					searchString = "Event";
+					break;
+				case BusMessageType.Command:
+					searchString = "Command";
+					break;
+			}
+
+			return _handlerTypes
+				.Where(x => {
+					return x.GetInterfaces().Any(y => y.Name.Contains(searchString));
+				})
+				.ToArray<Type>();
 		}
 
 		private BusMessageType GetBusMessageType(IMessage msg) {
