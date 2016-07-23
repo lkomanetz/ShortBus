@@ -9,7 +9,7 @@ using ShortBus.Contracts.MessageHandlers;
 using ShortBus.Tests.TestCommands;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace ShortBus.Tests {
+namespace ShortBus.Tests.TestHandlers {
 	public class TestHandler :
 		IEventHandler<TestEvent>, 
 		ICommandHandler<TestCommand> {

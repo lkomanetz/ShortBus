@@ -14,7 +14,7 @@ namespace ShortBus {
 
 	public class ServiceBus : IServiceBus {
 
-		private Type[] _handlerTypes; // All of the message handlers that need to be called when a message comes in
+		private Type[] _messageHandlers; 
 		private Type[] _messageTypes;
 		private string[] _outputQueuePaths;
 		private string _inputQueuePath;
@@ -26,12 +26,12 @@ namespace ShortBus {
 			string[] outputQueuePaths,
 			string inputQueuePath
 		) {
-			_handlerTypes = handlerTypes;
+			_messageHandlers = handlerTypes;
 			_outputQueuePaths = outputQueuePaths;
 			_inputQueuePath = inputQueuePath;
 			_inputQueue = null;
 
-			_messageTypes = this.FindSerializedTypes(_handlerTypes.ToArray());
+			_messageTypes = this.FindImplementedMessageTypes(_messageHandlers.ToArray());
 			this.InitializeInputQueue(inputQueuePath, _messageTypes);
 		}
 
@@ -94,7 +94,6 @@ namespace ShortBus {
 
 		private void ExecuteHandlers(IMessage msg) {
 			BusMessageType msgType = GetBusMessageType(msg);
-			//TODO (Logan) - Look into how accurate this is.  It should only find appropriate handlers
 
 			Type[] handlerTypes = FindHandlersFor(msgType);
 			if (handlerTypes == null || handlerTypes.Length == 0) {
@@ -104,7 +103,13 @@ namespace ShortBus {
 			int threadCount = handlerTypes.Length;
 			Thread[] handlerThreads = new Thread[threadCount];
 
+			//TODO(Logan): Look into accuracy of how many times handlers are being called.
 			for (short i = 0; i < threadCount; i++) {
+				/*
+				 * I'm passing in the loop index because the number of threads being created
+				 * is equal to the number of handlers that need to be executed.  So each iteration
+				 * of the loop needs to correlate to the next handler.
+				 */
 				handlerThreads[i] = new Thread((index) => {
 					int arrayIndex = Convert.ToInt32(index);
 					Type handlerType = handlerTypes[arrayIndex];
@@ -146,7 +151,7 @@ namespace ShortBus {
 					break;
 			}
 
-			return _handlerTypes
+			return _messageHandlers
 				.Where(x => {
 					return x.GetInterfaces().Any(y => y.Name.Contains(searchString));
 				})
@@ -162,7 +167,7 @@ namespace ShortBus {
 				BusMessageType.Command;
 		}
 
-		private Type[] FindSerializedTypes(Type[] handlerTypes) {
+		private Type[] FindImplementedMessageTypes(Type[] handlerTypes) {
 			List<Type> serializedTypes = new List<Type>();
 
 			for (short i = 0; i < handlerTypes.Length; i++) {
@@ -187,6 +192,7 @@ namespace ShortBus {
 			Message msmqMsg = new Message();
 			msmqMsg.Body = msg;
 			msmqMsg.Label = messageName;
+
 			_inputQueue.Send(msmqMsg);
 		}
 	}

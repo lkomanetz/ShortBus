@@ -7,11 +7,12 @@ using System.Reflection;
 using System.Xml;
 using XmlComparer;
 using ShortBus.Tests.TestCommands;
+using ShortBus.Tests.TestHandlers;
 
 namespace ShortBus.Tests {
 
 	[TestClass]
-	public class SerializationTests {
+	public class HandlerTests {
 		private const string MSMQ_QUEUE = @".\private$\unit_test";
 		private const string testGuid = "fd9da0bf-7d53-4fa0-87a3-e1ab96d26098";
 		private ServiceBus _bus;

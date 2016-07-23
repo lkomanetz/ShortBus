@@ -60,13 +60,13 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="SecondTestHandler.cs" />
-    <Compile Include="SerializationTests.cs" />
+    <Compile Include="TestHandlers\SecondTestHandler.cs" />
+    <Compile Include="HandlerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestCommands\TestCommand.cs" />
     <Compile Include="TestConstants.cs" />
     <Compile Include="TestEvents\TestEvent.cs" />
-    <Compile Include="TestHandler.cs" />
+    <Compile Include="TestHandlers\TestHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ShortBus.contracts\ShortBus.Contracts.csproj">
@@ -80,6 +80,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="TestServices\" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
