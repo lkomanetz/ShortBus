@@ -87,8 +87,7 @@ namespace ShortBus {
 		private void _inputQueue_ReceiveCompleted(object sender, ReceiveCompletedEventArgs e) {
 			Message msg = _inputQueue.EndReceive(e.AsyncResult);
 			msg.Formatter = new XmlMessageFormatter(_messageTypes);
-			IMessage test = msg.Body as IMessage;
-			ExecuteHandlers(test);
+			ExecuteHandlers((IMessage)msg.Body);
 			_inputQueue.BeginReceive();
 		}
 
@@ -102,8 +101,6 @@ namespace ShortBus {
 
 			int threadCount = handlerTypes.Length;
 			Thread[] handlerThreads = new Thread[threadCount];
-
-			//TODO(Logan): Look into accuracy of how many times handlers are being called.
 			for (short i = 0; i < threadCount; i++) {
 				/*
 				 * I'm passing in the loop index because the number of threads being created
@@ -135,8 +132,11 @@ namespace ShortBus {
 						new object[] { msg }
 					);
 				});
-
 				handlerThreads[i].Start(i);
+			}
+
+			foreach (Thread thread in handlerThreads) {
+				thread.Join();
 			}
 		}
 

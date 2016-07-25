@@ -36,7 +36,7 @@ namespace ShortBus.Tests {
 			TestEvent evt = CreateEvent();
 			_bus.Publish(evt);
 
-			int arraySize = 5;
+			int arraySize = 4;
 			TestEvent[] events = new TestEvent[arraySize];
 			for (short i = 0; i < arraySize; i++) {
 				events[i] = CreateEvent();
@@ -51,7 +51,7 @@ namespace ShortBus.Tests {
 			_bus.Send(cmd);
 
 
-			int arraySize = 5;
+			int arraySize = 4;
 			TestCommand[] events = new TestCommand[arraySize];
 			for (short i = 0; i < arraySize; i++) {
 				events[i] = CreateCommand();
