@@ -35,46 +35,30 @@ namespace ShortBus {
 			this.InitializeInputQueue(inputQueuePath, _messageTypes);
 		}
 
-		public string[] OutputQueuePaths {
-			get { return _outputQueuePaths; }
-			set { _outputQueuePaths = value; }
-		}
-
-		public string InputQueuePath { get { return _inputQueuePath; } }
+		public string[] OutputQueuePaths => _outputQueuePaths;
+		public string InputQueuePath => _inputQueuePath;
 
 		public void Publish(IList<IEvent> events) {
-			for (short i = 0; i < events.Count; i++) {
-				Publish(events[i]);
-			}
+			for (short i = 0; i < events.Count; i++) Publish(events[i]);
 		}
 
 		public void Publish(IEvent @event) {
-			for (short i = 0; i < _outputQueuePaths.Length; i++) {
-				SendToMsmq(_outputQueuePaths[i], @event);
-			}
+			for (short i = 0; i < _outputQueuePaths.Length; i++) SendToMsmq(_outputQueuePaths[i], @event);
 		}
 
 		public void Send(IList<ICommand> commands) {
-			for (short i = 0; i < commands.Count; i++) {
-				Send(commands[i]);
-			}
+			for (short i = 0; i < commands.Count; i++) Send(commands[i]);
 		}
 
 		public void Send(ICommand command) {
-			for (short i = 0; i < _outputQueuePaths.Length; i++) {
-				SendToMsmq(_outputQueuePaths[i], command);
-			}
+			for (short i = 0; i < _outputQueuePaths.Length; i++) SendToMsmq(_outputQueuePaths[i], command);
 		}
 
 		private void InitializeInputQueue(string inputQueue, IList<Type> serializedTypes) {
-			if (String.IsNullOrEmpty(inputQueue)) {
-				return;
-			}
+			if (String.IsNullOrEmpty(inputQueue)) return;
+			if (MessageQueue.Exists(inputQueue)) _inputQueue = new MessageQueue(inputQueue);
 
-			if (MessageQueue.Exists(inputQueue)) {
-				_inputQueue = new MessageQueue(inputQueue);
-			}
-			else {
+			if (_inputQueue == null) {
 				MessageQueue.Create(inputQueue);
 				_inputQueue = new MessageQueue(inputQueue);
 			}
@@ -95,9 +79,7 @@ namespace ShortBus {
 			BusMessageType msgType = GetBusMessageType(msg);
 
 			Type[] handlerTypes = FindHandlersFor(msgType);
-			if (handlerTypes == null || handlerTypes.Length == 0) {
-				return;
-			}
+			if (handlerTypes == null || handlerTypes.Length == 0) return;
 
 			int threadCount = handlerTypes.Length;
 			Thread[] handlerThreads = new Thread[threadCount];
@@ -135,9 +117,7 @@ namespace ShortBus {
 				handlerThreads[i].Start(i);
 			}
 
-			foreach (Thread thread in handlerThreads) {
-				thread.Join();
-			}
+			foreach (Thread t in handlerThreads) t.Join();
 		}
 
 		private Type[] FindHandlersFor(BusMessageType type) {
